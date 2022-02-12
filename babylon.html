@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+		<!-- Babylon.js -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+		<script src="https://preview.babylonjs.com/ammo.js"></script>
+		<script src="https://preview.babylonjs.com/cannon.js"></script>
+		<script src="https://preview.babylonjs.com/Oimo.js"></script>
+		<script src="https://preview.babylonjs.com/earcut.min.js"></script>
+		<script src="https://preview.babylonjs.com/babylon.js"></script>
+		<script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+		<script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+		<script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+		<script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+		<script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+		<script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+		<script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+		<style>
+			html,
+			body {
+				overflow: hidden;
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				padding: 0;
+			}
+
+			#renderCanvas {
+				width: 100%;
+				height: 100%;
+				touch-action: none;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="renderCanvas"></canvas>
+		<script>
+			var canvas = document.getElementById("renderCanvas");
+
+			var engine = null;
+			var scene = null;
+			var sceneToRender = null;
+			var createDefaultEngine = function () {
+				return new BABYLON.Engine(canvas, true, {
+					preserveDrawingBuffer: true,
+					stencil: true,
+					disableWebGL2Support: false
+				});
+			};
+
+			var createScene = function () {
+				var scene = new BABYLON.Scene(engine);
+
+				var camera = new BABYLON.ArcRotateCamera(
+					"Camera",
+					-Math.PI / 2,
+					Math.PI / 2,
+					12,
+					BABYLON.Vector3.Zero(),
+					scene
+				);
+
+				// This targets the camera to scene origin
+				camera.setTarget(BABYLON.Vector3.Zero());
+
+				// This attaches the camera to the canvas
+				camera.attachControl(canvas, true);
+				// Lights
+				var light1 = new BABYLON.HemisphericLight(
+					"light1",
+					new BABYLON.Vector3(0, 1, 0),
+					scene
+				);
+				var light2 = new BABYLON.PointLight(
+					"light2",
+					new BABYLON.Vector3(0, -10, 0),
+					scene
+				);
+				var light3 = new BABYLON.DirectionalLight(
+					"light3",
+					new BABYLON.Vector3(0, -1, 0),
+					scene
+				);
+
+				light1.diffuse = new BABYLON.Color3(100, 0, 10);
+				light1.specular = new BABYLON.Color3(1, 10, 0);
+
+				light2.diffuse = new BABYLON.Color3(10, 1, 0);
+				light2.specular = new BABYLON.Color3(40, 1, 0);
+
+				async function getPhotos() {
+					try {
+						const response = await fetch(apiUrl);
+						photosArray = await response.json();
+						console.log(photosArray[0]);
+					} catch (error) {
+						console.log("Error");
+					}
+				}
+
+				//Meshes
+				let sphere = new BABYLON.MeshBuilder.CreateSphere("sphere");
+				sphere.position.y = 10;
+				var mat1 = new BABYLON.StandardMaterial("mat1", scene);
+				mat1.diffuseColor = new BABYLON.Color3(1, 0, 0);
+
+				let box = new BABYLON.MeshBuilder.CreateBox("box");
+				box.position.y = 5;
+				box.position.x = 7;
+				var mat2 = new BABYLON.StandardMaterial("mat2", scene);
+				mat2.diffuseColor = new BABYLON.Color3(0, 10, 0);
+				box.material = mat2;
+
+				let ground = new BABYLON.MeshBuilder.CreateGround("ground", {
+					width: 30,
+					height: 30
+				});
+
+				ground.position.y = -4;
+
+				var mat3 = new BABYLON.StandardMaterial("mat3", scene);
+				mat3.diffuseColor = new BABYLON.Color3(0, 10, 10);
+				ground.material = mat3;
+
+				mat3.diffuseTexture = new BABYLON.Texture(
+					"https://source.unsplash.com/8uZPynIu-rQ/400x400"
+				);
+				let torus = new BABYLON.MeshBuilder.CreateTorus("torus", {
+					thickness: 0.25,
+					diameter: 10
+				});
+
+				var mat4 = new BABYLON.StandardMaterial("mat4", scene);
+				mat4.diffuseColor = new BABYLON.Color3(30, 1, -10);
+				torus.material = mat4;
+
+				const torus_knot = BABYLON.MeshBuilder.CreateTorusKnot("tk", {
+					tube: 0.1,
+					radialSegments: 189
+				});
+
+				torus.position.y = 3;
+				torus.position.x = 3;
+
+				var mat5 = new BABYLON.StandardMaterial("mat5", scene);
+				mat5.diffuseColor = new BABYLON.Color3(-2, -6, 10);
+				torus_knot.material = mat5;
+
+				mat5.diffuseTexture = new BABYLON.Texture(
+					"https://source.unsplash.com/i0fCUofGjV8/200x200"
+				);
+
+				let sphere3 = new BABYLON.MeshBuilder.CreateSphere("sphere3");
+				sphere3.position.y = 7;
+				sphere3.position.x = 2;
+
+				var mat6 = new BABYLON.StandardMaterial("mat6", scene);
+				mat6.diffuseColor = new BABYLON.Color3(-2, 6, 10);
+				sphere3.material = mat6;
+
+				//360degreepanorama
+				var domeChallennge = new BABYLON.PhotoDome(
+					"dome360",
+					"https://source.unsplash.com/eZiWBcMXrGo/400x400",
+
+					{
+						resolution: 33,
+						size: 1000
+					},
+					scene
+				);
+
+				domeChallennge.imageMode = BABYLON.PhotoDome.MODE_TOPBOTTOM;
+
+				// initial velocity
+				box_vx = -0.08;
+				box_vy = -0.05;
+				sphere_vx = -0.0003;
+				sphere_vy = -0.1;
+				box.computeWorldMatrix(true);
+				sphere.computeWorldMatrix(true);
+				// keyboard events
+				// initial velocity of torus
+				var valueA;
+				var valueB;
+				var alpha = 0.01;
+				scene.actionManager = new BABYLON.ActionManager(scene);
+				scene.actionManager.registerAction(
+					new BABYLON.ExecuteCodeAction(
+						// event type is keydown
+						BABYLON.ActionManager.OnKeyDownTrigger,
+
+						// code to be exectued on keydown
+						function (keyInfo) {
+							let keyDirection = keyInfo.sourceEvent.key;
+
+							if (keyDirection == "w") {
+								valueA = 1;
+								valueB = 1;
+							} else if (keyDirection == "s") {
+								valueA = -1;
+								valueB = 1;
+							} else if (keyDirection == "a") {
+								valueA = -5;
+								valueB = 1;
+							} else if (keyDirection == "d") {
+								valueA = 1;
+								valueB = -1;
+							}
+						}
+					)
+				);
+
+				// This code will run at every time step before render
+				scene.registerBeforeRender(function () {
+					box.position.x += box_vx;
+					box.position.y += box_vy;
+					mat4.diffuseColor = new BABYLON.Color3(0 + valueA, 0 + valueB, 0);
+					sphere.position.x += sphere_vx;
+					sphere.position.y += sphere_vy;
+					if (box.intersectsMesh(torus_knot, true)) {
+						box.material.emissiveColor = new BABYLON.Color4(10, 0, 0, 1);
+					}
+					if (box.intersectsMesh(ground, true)) {
+						box.material.emissiveColor = new BABYLON.Color4(0, 2, 10, 1);
+					}
+
+					if (sphere.intersectsMesh(box, true)) {
+						sphere_vy = 0.3;
+						sphere.position.y -= Math.abs(sphere_vy);
+						sphere.scaling.y = alpha;
+					}
+				});
+
+				//keyFrame animation
+				let frameRate = 40;
+				let animationLength = 7; // seconds
+				let tkAnimation = new BABYLON.Animation(
+					"tk animation",
+					"position.y",
+					frameRate,
+					BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+					BABYLON.Animation.ANIMATIONLOOPMODE_LOOP
+				);
+
+				// Keyframes
+				let tkKeyFrames = [
+					{
+						frame: 0,
+						value: 4
+					},
+					{
+						frame: (animationLength / 4) * frameRate,
+						value: -2
+					},
+					{
+						frame: (animationLength / 3) * frameRate,
+						value: 3
+					},
+					{
+						frame: animationLength * frameRate,
+						value: 4
+					}
+				];
+
+				tkAnimation.setKeys(tkKeyFrames);
+
+				var tkColorAnimation = new BABYLON.Animation(
+					"tkColorAnimation",
+					"material.diffuseColor",
+					frameRate,
+					BABYLON.Animation.ANIMATIONTYPE_COLOR3,
+					BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+				);
+
+				let tkColorKeyFrames = [
+					{
+						frame: 0,
+						value: new BABYLON.Color3(31, 1, 0)
+					},
+					{
+						frame: (animationLength / 4) * frameRate,
+						value: new BABYLON.Color3(0, 60, 0)
+					},
+					{
+						frame: (animationLength / 3) * frameRate,
+						value: new BABYLON.Color3(20, 0, 70)
+					},
+					{
+						frame: animationLength * frameRate,
+						value: new BABYLON.Color3(0, 0, 80)
+					}
+				];
+
+				tkColorAnimation.setKeys(tkColorKeyFrames);
+				scene.beginDirectAnimation(
+					torus_knot,
+					[tkAnimation, tkColorAnimation],
+					0,
+					animationLength * frameRate,
+					true
+				);
+
+				return scene;
+			};
+
+			window.initFunction = async function () {
+				var asyncEngineCreation = async function () {
+					try {
+						return createDefaultEngine();
+					} catch (e) {
+						console.log(
+							"the available createEngine function failed. Creating the default engine instead"
+						);
+						return createDefaultEngine();
+					}
+				};
+
+				window.engine = await asyncEngineCreation();
+				if (!engine) throw "engine should not be null.";
+				window.scene = createScene();
+			};
+			initFunction().then(() => {
+				sceneToRender = scene;
+				engine.runRenderLoop(function () {
+					if (sceneToRender && sceneToRender.activeCamera) {
+						sceneToRender.render();
+					}
+				});
+			});
+
+			// Resize
+			window.addEventListener("resize", function () {
+				engine.resize();
+			});
+		</script>
+	</body>
+</html>
